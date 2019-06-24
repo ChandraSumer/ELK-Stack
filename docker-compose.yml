@@ -1,0 +1,36 @@
+version: "3"
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
+    environment:
+      - cluster.name=elasticsearch
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    deploy:
+      replicas: 5
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 500M
+      restart_policy:
+        condition: on-failure
+    ports: 
+    - "43434:9200"
+    - "43443:9300"
+    networks:
+    - elk
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.1.1
+    links:
+    - elasticsearch
+    volumes:
+    - ~/pipeline/:/usr/sh~are/logstash/pipeline/
+    environment:
+      LS_JAVA_OPTS: "-Xmx512m -Xms512m"
+    networks:
+    - elk
+    depends_on: ['elasticsearch']
+networks:
+  elk:
+    driver: bridge
