@@ -1,36 +1,45 @@
-version: "3"
+version: '3'
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
+    container_name: elasticsearch
     environment:
-      - cluster.name=elasticsearch
-      - discovery.type=single-node
+      - node.name=elasticsearch
+      - cluster.initial_master_nodes=elasticsearch
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    deploy:
-      replicas: 5
-      resources:
-        limits:
-          cpus: "0.1"
-          memory: 500M
-      restart_policy:
-        condition: on-failure
-    ports: 
-    - "43434:9200"
-    - "43443:9300"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
     networks:
-    - elk
-
+      - esnet
+  web:
+    build: .
+    container_name: web
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/code
+    depends_on: ['elasticsearch']
+    networks:
+      - esnet
   logstash:
     image: docker.elastic.co/logstash/logstash:7.1.1
     links:
     - elasticsearch
+    - web
     volumes:
-    - ~/pipeline/:/usr/sh~are/logstash/pipeline/
+    - ~/pipeline/:/usr/share/logstash/pipeline/
     environment:
       LS_JAVA_OPTS: "-Xmx512m -Xms512m"
     networks:
-    - elk
-    depends_on: ['elasticsearch']
+    - esnet
+    depends_on: 
+    - elasticsearch
+    - web
 networks:
-  elk:
-    driver: bridge
+  esnet:
