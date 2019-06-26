@@ -41,5 +41,12 @@ services:
     depends_on: 
     - elasticsearch
     - web
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.1.1
+    ports:
+      - "43434:5601"
+    networks:
+    - esnet
+    depends_on: ['elasticsearch']
 networks:
   esnet:
